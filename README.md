@@ -20,6 +20,7 @@ Everything here comes from public sources listed below. No tokens, no private pl
 - iptv-org EPG grabber (run in CI, outputs reduced to titles/times): https://github.com/iptv-org/epg - Unlicense. The sites it reads have their own terms; only short title/time data is kept.
 - i.mjh.nz guides (Pluto, Plex, Roku, Samsung TV Plus XMLTV): https://i.mjh.nz/ by Matt Huisman. No licence file is published; used as a free public download, only titles/times kept. Credit: i.mjh.nz.
 - epgshare01 per-country guides (gap fill only): https://epgshare01.online/ - states "free EPG for legal use only"; no explicit grant for automated download, so this is the first source to drop if asked.
+- Sri Lankan schedules (`extra_epg/hiru.py`, `extra_epg/rupavahini.py`): public schedule pages of Hiru TV (hirutv.lk) and Rupavahini (tv.rupavahini.lk). One request per page per run, identifying User-Agent, only titles/times kept. Both robots.txt files allow this (no terms-of-use page read). Schedules are weekly templates and may differ from what actually airs.
 - Streams are third-party links; this repo hosts no video.
 
 ## How the pipeline works
