@@ -1,0 +1,120 @@
+name: daily-data
+on:
+  schedule:
+    - cron: "30 20 * * *"   # 02:00 Sri Lanka
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: daily-data
+  cancel-in-progress: false
+env:
+  WORK: ${{ github.workspace }}/work
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      sites: ${{ steps.plan.outputs.sites }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python pipeline/prepare.py "$WORK"
+      - id: plan
+        run: python -c "import json,os;print('sites='+json.dumps([s['site'] for s in json.load(open(os.environ['WORK']+'/plan.json'))['sites']]))" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: work
+          path: work/*.json
+          retention-days: 1
+
+  probe:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install aiohttp
+      - uses: actions/download-artifact@v4
+        with: { name: work, path: work }
+      # rolling history: 'dead' needs 2 consecutive dead days
+      - uses: actions/cache@v4
+        with:
+          path: state/history.json
+          key: history-${{ github.run_id }}
+          restore-keys: history-
+      - run: mkdir -p state && python pipeline/probe.py "$WORK" state/history.json --deadline 1260
+      - uses: actions/upload-artifact@v4
+        with:
+          name: probe
+          path: |
+            work/probe.json
+            work/probe_stats.json
+          retention-days: 1
+
+  grab:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 32
+    continue-on-error: true   # one broken site must not sink the run
+    strategy:
+      fail-fast: false
+      matrix:
+        site: ${{ fromJSON(needs.prepare.outputs.sites) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/download-artifact@v4
+        with: { name: work, path: work }
+      - run: git clone --depth 1 https://github.com/iptv-org/epg epg && cd epg && npm ci --silent
+      - run: python pipeline/grab.py "$WORK" epg "${{ matrix.site }}" grab-out --deadline 1260
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grab-${{ matrix.site }}
+          path: grab-out/*.xml
+          retention-days: 1
+          if-no-files-found: ignore
+
+  publish:
+    needs: [prepare, probe, grab]
+    if: ${{ !cancelled() && needs.probe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/download-artifact@v4
+        with: { name: work, path: work }
+      - uses: actions/download-artifact@v4
+        with: { name: probe, path: work }
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: grab-*
+          path: grab
+          merge-multiple: true
+      - run: python pipeline/publish.py "$WORK" site --grab grab
+      - run: ls -la site && cat site/meta.json
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: site }
+
+  deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.d.outputs.page_url }}
+    steps:
+      - id: d
+        uses: actions/deploy-pages@v4
