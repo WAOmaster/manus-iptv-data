@@ -1,9 +1,10 @@
 """Rupavahini schedule from https://tv.rupavahini.lk/tv-schedule/ (static weekly table, rows tagged data-day, Sri Lanka time)."""
+import os
 import html, re, urllib.request
 from datetime import datetime, timedelta, timezone
 
 URL = "https://tv.rupavahini.lk/tv-schedule/"
-UA = "ManusIPTV-data/1.0 (+https://github.com/WAOmaster/manus-iptv-data)"
+UA = "ManusIPTV-data/1.0 (+https://github.com/%s)" % os.environ.get("GITHUB_REPOSITORY", "your-name/manus-iptv-data")  # the repo that runs the job
 CHANNEL = "Rupavahini.lk"
 SL = timezone(timedelta(hours=5, minutes=30))
 DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]

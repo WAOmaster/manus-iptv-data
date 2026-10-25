@@ -1,6 +1,6 @@
 # manus-iptv-data
 
-A small public data feed for a family Android TV app (Manus IPTV). Once a day (02:00 Sri Lanka time) a GitHub Actions job checks every channel in the public iptv-org playlist, works out which ones still play, and publishes three small files on GitHub Pages:
+A small public data feed for the Manus IPTV Android TV app (https://github.com/WAOmaster/manus-iptv). The app works without it; the feed adds dead-channel hiding and now/next guide data. Once a day (02:00 Sri Lanka time) a GitHub Actions job checks every channel in the public iptv-org playlist, works out which ones still play, and publishes three small files on GitHub Pages:
 
 | File | What it is |
 |---|---|
@@ -10,7 +10,16 @@ A small public data feed for a family Android TV app (Manus IPTV). Once a day (0
 
 Status `s`: `a` alive, `d` dead (dead on 2 days in a row), `g` blocked/auth (401/403/451 - the job runs in the US, the TV is in Sri Lanka, so this is NOT dead), `t` timeout or unknown.
 
-Pages URL: https://waomaster.github.io/manus-iptv-data/
+Example Pages URL (the owner's copy): https://waomaster.github.io/manus-iptv-data/ - yours will be `https://<your-github-name>.github.io/<repo-name>/`.
+
+## Make your own copy
+Anyone can run their own feed (and so keep their own capacity, schedule and source list):
+1. Press **Use this template** at the top of this repo, name your copy, keep it **public** (free GitHub Pages needs a public repo on free accounts).
+2. In your copy open **Settings > Pages** and set **Source: GitHub Actions**.
+3. Open **Actions > daily-data > Run workflow** (enable Actions first if GitHub asks). The first run takes about 30-40 minutes; after that it runs daily on its own.
+4. Your feed is now at `https://<your-github-name>.github.io/<repo-name>/` (check that `meta.json` opens). Paste that address in the app: **Settings > About > Channel data feed**.
+
+Nothing in the workflow is tied to one account: it runs wherever it is copied. The cron time (`30 20 * * *` UTC = 02:00 Sri Lanka) is in `.github/workflows/daily.yml`; change it if you like. The `extra_epg/` plugins are Sri Lankan examples: delete them or add your own broadcasters.
 
 ## Only public data
 Everything here comes from public sources listed below. No tokens, no private playlists, nothing from the TV. Do not add any.

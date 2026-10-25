@@ -1,9 +1,10 @@
 """Hiru TV schedule from https://www.hirutv.lk/web_pages/Schedule/Schedule.php (static HTML, Mon-Sun tab panes, 12h Sri Lanka time)."""
+import os
 import html, re, urllib.request
 from datetime import datetime, timedelta, timezone
 
 URL = "https://www.hirutv.lk/web_pages/Schedule/Schedule.php"
-UA = "ManusIPTV-data/1.0 (+https://github.com/WAOmaster/manus-iptv-data)"
+UA = "ManusIPTV-data/1.0 (+https://github.com/%s)" % os.environ.get("GITHUB_REPOSITORY", "your-name/manus-iptv-data")  # the repo that runs the job
 CHANNEL = "HiruTV.lk"
 SL = timezone(timedelta(hours=5, minutes=30))
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
