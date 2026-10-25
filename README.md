@@ -4,8 +4,8 @@ A small public data feed for a family Android TV app (Manus IPTV). Once a day (0
 
 | File | What it is |
 |---|---|
-| `channels.json.gz` | One record per stream: `u` url, `h` first 16 hex chars of sha1(url), `id` tvg-id, `s` status, `p` popularity 0-10, `c` check date (yyyymmdd) |
-| `epg.json.gz` | Now/next TV guide: `{channel_id: [[start, stop, title], ...]}`, UTC epoch seconds, titles max 80 chars, about 2 h back to 30 h ahead. Keys are base ids (tvg-id without `@feed`) |
+| `channels.json.gz` | One record per stream: `u` url, `h` first 16 hex chars of sha1(url), `id` tvg-id, `s` status, `p` popularity 0-10, `c` check date (yyyymmdd), optional `cc` countries the feed is really broadcast to when they differ from the id suffix (lowercase, `latam` = Latin America), optional `lg` first feed language (iso 639-3) |
+| `epg.json.gz` | Now/next TV guide: `{channel_id: [[start, stop, title], ...]}`, UTC epoch seconds, titles max 80 chars, about 2 h back to 30 h ahead. Keys are exact playlist tvg-ids (`channel@feed`): a feed only ever gets its own guide, never another region's. A bare base id is an alias of the channel's main feed (`is_main`) |
 | `meta.json` | When it ran, counts per status, guide coverage, sources used, file sizes, run time |
 
 Status `s`: `a` alive, `d` dead (dead on 2 days in a row), `g` blocked/auth (401/403/451 - the job runs in the US, the TV is in Sri Lanka, so this is NOT dead), `t` timeout or unknown.

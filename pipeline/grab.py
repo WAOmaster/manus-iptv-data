@@ -9,16 +9,17 @@ def main(work, repo, site, out, deadline=1200, cap=400, chunk=100):
     t_end = time.time() + deadline
     repo, out = os.path.abspath(repo), os.path.abspath(out)
     repo, out = os.path.abspath(repo), os.path.abspath(out)
-    pop = {}
+    pop, ids = {}, set()  # a grabber row is wanted if it is a playlist id (that feed) or a feed-less base id
     for r in load(f"{work}/playlist.json"):
-        pop[r["base"]] = max(pop.get(r["base"], 0), r["p"])
+        pop[r["base"]] = max(pop.get(r["base"], 0), r["p"]); ids.add(r["id"])
     chans, seen = [], set()
     import glob
     for f in glob.glob(f"{repo}/sites/{site}/*.channels.xml"):
         for c in ET.parse(f).getroot().iter("channel"):
-            b = base_id(c.get("xmltv_id") or "")
-            if b in pop and b not in seen:
-                seen.add(b); chans.append((pop[b], c))
+            x = c.get("xmltv_id") or ""
+            b = base_id(x)
+            if b in pop and (x in ids or x == b) and x not in seen:
+                seen.add(x); chans.append((pop[b], c))
     chans = [c for _, c in sorted(chans, key=lambda x: -x[0])[:cap]]
     print(site, len(chans), "channels")
     os.makedirs(out, exist_ok=True)

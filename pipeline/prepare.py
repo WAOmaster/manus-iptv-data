@@ -9,7 +9,9 @@ def main(work, sample=0):
     for n in ("channels", "feeds", "guides", "streams"):
         open(f"{work}/{n}.json", "wb").write(get(f"{API}{n}.json"))
     channels = {c["id"]: c for c in load(f"{work}/channels.json")}
-    feeds = collections.Counter(f["channel"] for f in load(f"{work}/feeds.json"))
+    feed_list = load(f"{work}/feeds.json")
+    feeds = collections.Counter(f["channel"] for f in feed_list)
+    feed_rec = {(f["channel"], f["id"]): f for f in feed_list}
     guides = load(f"{work}/guides.json")
     streams = load(f"{work}/streams.json")
     sites_by_ch = collections.defaultdict(set)
@@ -30,6 +32,10 @@ def main(work, sample=0):
         b = base_id(tid)
         ch = channels.get(b, {})
         m = re.search(r"\((\d{3,4}p)\)", e["name"])
+        fr = feed_rec.get((b, tid.partition("@")[2]), {})
+        suffix = b.rsplit(".", 1)[-1].lower() if "." in b else ""
+        cc = feed_countries(fr.get("broadcast_area"), fr.get("languages"))
+        lg = (fr.get("languages") or [""])[0]
         recs.append({
             "id": tid, "base": b, "name": re.sub(r"\s*\[[^\]]*\]|\s*\(\d{3,4}p\)", "", e["name"]).strip(),
             "url": u, "h": url_hash(u), "ua": e.get("http-user-agent") or e.get("user-agent", ""),
@@ -37,6 +43,7 @@ def main(work, sample=0):
             "country": (ch.get("country") or (b.rsplit(".", 1)[-1] if "." in b else "")).lower(),
             "cats": ch.get("categories") or [e.get("group-title", "")], "logo": e.get("tvg-logo", ""),
             "q": qual.get(u) or (m.group(1) if m else ""),
+            **({"cc": cc} if cc and cc != [suffix] else {}), **({"lg": lg} if lg else {}),
         })
     # popularity: ln(1+G)+0.5ln(1+F)+0.3ln(1+S)+0.5[network]+0.3[launched], normalised to 0-10 over the playlist
     def pop(b):

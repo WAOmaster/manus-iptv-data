@@ -17,6 +17,25 @@ def base_id(tvg_id):
     return tvg_id.split("@", 1)[0]
 
 
+LATAM = {"LATAM", "HISPAM", "CENAMER", "CARIB"}  # iptv-org regions that mean "Latin America" -> pseudo country "latam"
+HOME_LANG = {"amh": "et", "orm": "et"}  # Ethiopian-only languages: a US-registered Ethiopian feed lists under Ethiopia
+
+
+def feed_countries(area, langs):
+    """Where a feed is really watched, from feeds.json broadcast_area + languages -> lowercase codes, [] = unknown.
+    c/XX -> xx; ct/USNYC and s/US-NY -> us; r/LATAM|HISPAM|CENAMER|CARIB -> 'latam'; other regions are ignored."""
+    out = []
+    for a in area or []:
+        k, _, v = a.partition("/")
+        c = v[:2].lower() if k in ("c", "ct", "s") else "latam" if k == "r" and v in LATAM else ""
+        if c and c not in out:
+            out.append(c)
+    home = {HOME_LANG.get(x) for x in langs or []}
+    if langs and len(home) == 1 and None not in home and out == ["us"]:
+        out = [home.pop()]
+    return out
+
+
 def url_hash(url):
     # shortcut: sha1 truncated to 16 hex chars (64 bits) to keep the file small; fine for ~11k urls.
     return hashlib.sha1(url.encode()).hexdigest()[:16]
